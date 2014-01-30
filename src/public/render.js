@@ -64,7 +64,7 @@ var start = function (width, height, map, player, players) {
     var renderLoop = function () {
         ctx.clearRect(0,0, width, height);
         map.forEach(function(tile) {
-            ctx.drawImage(tile.img, nx(tile.x), ny(tile.y));
+            ctx.drawImage(tile.img, nx(tile.x * 128), ny(tile.y * 128));
         });
 
         players.forEach(function(remote_player) {

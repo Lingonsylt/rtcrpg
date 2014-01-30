@@ -1,5 +1,6 @@
-define(["peer"], function(peer) {
-var start = function(onMessageCallback) {
+define(["peer", "seedrandom"], function(peer) {
+var start = function(onMessageCallback, onStartCallback) {
+    var seed_number = Math.floor(Math.random() * 1000000) + "a";
     var remote_peers = [];
     var id = window.location.hash.substring(1).split(",")[0];
     var endpoint = null;
@@ -7,6 +8,13 @@ var start = function(onMessageCallback) {
         endpoint = window.location.hash.substring(1).split(",")[1];
     }
     var p = new peer.Peer(id, {host: 'localhost', port: 9000, key: 'secret'});
+
+    var broadcast = function (message) {
+        message.id = id;
+        remote_peers.forEach(function(remote_peer) {
+            remote_peer["conn"].send(message);
+        });
+    };
 
     var connectPeer = function (remote_id) {
         console.log("Connecting to '" + remote_id + "'...");
@@ -19,6 +27,13 @@ var start = function(onMessageCallback) {
         });
 
         conn.on('data', function(data){
+            if(endpoint && data.seed) {
+                endpoint = null;
+                seed_number = data["seed_number"];
+                Math.seedrandom(seed_number);
+                console.log("Set seed: ", data["seed_number"]);
+                onStartCallback(broadcast);
+            }
             receiveData(data);
         });
     };
@@ -64,19 +79,17 @@ var start = function(onMessageCallback) {
                     remote_peer_ids.push(remote_peer.id);
                 });
                 conn.send({"id": id, "new_peers": remote_peer_ids});
+                conn.send({"id": id, "seed": true, "seed_number": seed_number});
             }
         });
     });
 
     if (endpoint !== null) {
         connectPeer(endpoint);
-    }
-
-    return function (message) {
-        message.id = id;
-        remote_peers.forEach(function(remote_peer) {
-            remote_peer["conn"].send(message);
-        });
+    } else {
+        Math.seedrandom(seed_number);
+        console.log("Set seed: ", seed_number);
+        onStartCallback(broadcast);
     }
 };
 

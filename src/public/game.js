@@ -1,10 +1,4 @@
-define(["render", "peerclient"], function(render, peerclient) {
-function Tile(x, y) {
-    this.sprite = "G000M800.BMP";
-    this.x = x;
-    this.y = y;
-    this.img = null;
-}
+define(["render", "peerclient", "map"], function(render, peerclient, map) {
 
 function Player(x, y) {
     this.sprite = "player.png";
@@ -23,14 +17,8 @@ var start = function () {
 
     var width = 600;
     var height = 600;
-    var player = new Player(width / 2, height / 2);
 
-    var tiles = [];
-    for (var i = 0; i < 10; i++) {
-        for (var j = 0; j < 10; j++) {
-            tiles.push(new Tile(i * 128, j * 128));
-        }
-    }
+
     document.onkeydown  = function (evt) {
         switch (evt.keyCode) {
             case 37:
@@ -67,7 +55,7 @@ var start = function () {
 
     var remote_players = {};
     var players = [];
-    var broadcast = peerclient.start(function(id, pkg) {
+    peerclient.start(function(id, pkg) {
         var remote_player = remote_players[id];
         if (remote_player) {
             remote_player.x = pkg.x;
@@ -79,10 +67,14 @@ var start = function () {
                 players.push(new_player);
             });
         }
+    }, function (broadcast) {
+        var game_map = new map.Map(500);
+        var player = new Player(game_map.start_tile.x, game_map.start_tile.y);
+        tick(keys, player, broadcast);
+        render.start(width, height, game_map.tiles, player, players);
     });
 
-    tick(keys, player, broadcast);
-    render.start(width, height, tiles, player, players);
+
 };
 
 var tick = function(keys, player, broadcast) {
