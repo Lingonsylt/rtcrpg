@@ -40,7 +40,6 @@ define(function() {
             ["n", "e", "s", "w"].forEach(function(dir) {
                 var neigbor = gn(tile, dir);
                 if (!neigbor) {
-                    //console.log(tile, dir, neigbor);
                     neigbor = new Tile(tile.x + nav[dir][0], tile.y + nav[dir][1], false);
                     tiles.push(neigbor);
                     tile_map[neigbor.x + "," + neigbor.y] = neigbor;

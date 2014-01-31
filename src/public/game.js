@@ -1,4 +1,4 @@
-define(["render", "peerclient", "map"], function(render, peerclient, map) {
+define(["render", "peerclient", "map", "commands"], function(render, peerclient, map, commands) {
 
 function Player(x, y) {
     this.sprite = "player.png";
@@ -55,48 +55,71 @@ var start = function () {
 
     var remote_players = {};
     var players = [];
+    var game_map = null;
+
+    var createNewPlayer = function(player_id, x, y) {
+        var new_player = new Player(x, y);
+        render.addSpritedObject(new_player, function() {
+            console.log("New player: ", player_id);
+            remote_players[player_id] = new_player;
+            players.push(new_player);
+        });
+    };
     peerclient.start(function(id, pkg) {
         var remote_player = remote_players[id];
         if (remote_player) {
             remote_player.x = pkg.x;
             remote_player.y = pkg.y;
         } else {
-            var new_player = new Player(pkg.x, pkg.y);
-            remote_players[id] = new_player;
-            render.addSpritedObject(new_player, function() {
-                players.push(new_player);
-            });
+            createNewPlayer(id, pkg.x, pkg.y);
         }
-    }, function (broadcast) {
-        var game_map = new map.Map(500);
+    }, function (broadcast, new_client_id) {
+        game_map = new map.Map(500);
         var player = new Player(game_map.start_tile.x, game_map.start_tile.y);
-        tick(keys, player, broadcast);
+        if(new_client_id) {
+            createNewPlayer(new_client_id, game_map.start_tile.x, game_map.start_tile.y);
+        }
+        tick(keys, player, broadcast, remote_players);
         render.start(width, height, game_map.tiles, player, players);
+    }, function (new_client_id) {
+        createNewPlayer(new_client_id, game_map.start_tile.x, game_map.start_tile.y);
     });
 
 
 };
 
-var tick = function(keys, player, broadcast) {
+var tick = function(keys, player, broadcast, remote_players) {
     var _tick = function() {
+        var dirs = {};
         if (keys.left) {
-            player.x -= 10;
+            dirs["w"] = true;
         }
 
         if (keys.right) {
-            player.x += 10;
+            dirs["e"] = true;
         }
 
         if (keys.up) {
-            player.y += 10;
+            dirs["n"] = true;
         }
 
         if (keys.down) {
-            player.y -= 10;
+            dirs["s"] = true;
         }
 
-        broadcast({"update": true, "pkg": {"x": player.x, "y": player.y}});
-        setTimeout(_tick, 20);
+        var cmds = [new commands.cmds.MOVE(dirs).serial()];
+        broadcast({"update": true, "cmds":cmds}, function(pkgs) {
+            pkgs.forEach(function(pkg) {
+                var _player = player;
+                if (!pkg.self) {
+                    _player = remote_players[pkg.id];
+                }
+                pkg.cmds.forEach(function(serial_cmd) {
+                    commands.userial(serial_cmd).exec(_player);
+                });
+            });
+            setTimeout(_tick, 20);
+        });
     };
     _tick();
 };
