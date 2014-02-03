@@ -6,7 +6,7 @@ define(function() {
                 return {type: "MOVE", dirs: this.dirs};
             };
 
-            this.userial = function(cmd) {
+            this.unserial = function(cmd) {
                 return new cmds.MOVE(cmd.dirs);
             };
 
@@ -32,8 +32,8 @@ define(function() {
 
     return {
         cmds: cmds,
-        userial:function(cmd) {
-            return new cmds[cmd.type]().userial(cmd);
+        unserial:function(cmd) {
+            return new cmds[cmd.type]().unserial(cmd);
         }
-    }
+    };
 });
