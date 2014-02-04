@@ -4,6 +4,7 @@ define(function() {
         this.x = x;
         this.y = y;
         this.img = null;
+        this.passable = passable;
     }
 
     function Map(numtiles) {

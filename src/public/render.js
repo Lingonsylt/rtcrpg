@@ -34,7 +34,7 @@ function ImageLoader() {
     };
 }
 var run = true;
-var start = function (width, height, map, player, players) {
+var start = function (width, height, map, player, players, monsters) {
     var ctx = document.getElementById('canvas').getContext('2d');
 
     var il = new ImageLoader();
@@ -44,6 +44,10 @@ var start = function (width, height, map, player, players) {
     });
 
     players.forEach(function(tile) {
+        il.createObjectImage(tile);
+    });
+
+    monsters.forEach(function(tile) {
         il.createObjectImage(tile);
     });
 
@@ -65,6 +69,10 @@ var start = function (width, height, map, player, players) {
         ctx.clearRect(0,0, width, height);
         map.forEach(function(tile) {
             ctx.drawImage(tile.img, nx(tile.x * 128), ny(tile.y * 128));
+        });
+
+        monsters.forEach(function(monster) {
+            ctx.drawImage(monster.img, nx(monster.x - monster.img.width / 2), ny(monster.y - monster.img.height / 2));
         });
 
         players.forEach(function(remote_player) {
